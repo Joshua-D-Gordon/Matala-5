@@ -1,13 +1,36 @@
-class traceroot:
-    def __init__(self, destip):
-        self.ttl = 1
-        self.destip = destip
+from scapy.all import *
+
+class Traceroute:
+    def __init__(self, destination):
+        self.destination = destination
+
+    def send_packet(self, ttl):
+        packet = IP(dst=self.destination, ttl=ttl) / ICMP()
+        reply = sr1(packet, verbose=False, timeout=5)
+        if reply is not None:
+            return reply.src
+        else:
+            return "*"
+
     def run(self):
-        current_ip = 0
-        while self.destip != current_ip:
-            #send packet with self.ttl
-            #current_ip = returned ip
-            #self.ttl+=1
+        ttl = 1
+        while True:
+            router_ip = self.send_packet(ttl)
+            if router_ip == "*":
+                print(f"{ttl}: *")
+            else:
+                print(f"{ttl}: {router_ip}")
+
+            if router_ip == self.destination:
+                break
+
+            ttl += 1
+
+if __name__ == "__main__":
+    destination = input("Enter the destination IP: ")
+    traceroute = Traceroute(destination)
+    traceroute.run()
+
     
     
     
