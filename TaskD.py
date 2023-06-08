@@ -24,7 +24,7 @@ def start_sniffer():
 
 
 if __name__ == "__main__":
-    # Machine A (Attacker) - Run the Sniffer
+    # machine A (Attacker) - run the sniffer 
     thread = Thread(target=start_sniffer)
     thread.start()
 

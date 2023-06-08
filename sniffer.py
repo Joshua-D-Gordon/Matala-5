@@ -1,75 +1,69 @@
-import socket
+from scapy.all import sniff, TCP, IP
 import datetime
-import struct
-import os
 
-HOST = "127.0.0.1"
-PORT = 0
+
+
+
 ID_1 = 332307073
-ID_2 = 332307072
-MAX_SIZE = 65536
+ID_2 = 214329633
 
-class Sniffer:
-    def __init__(self, protocol):
-        self.file_name = str(ID_1) +"_"+str(ID_2)
-        self.protocol = protocol
-        self.host = HOST
-        self.port = PORT
+class PacketSniffer:
+    def __init__(self, server_port, proxy_port):
+        self.file_name = str(ID_1)+"_"+str(ID_2)
+        #self.CLIENT_PORT = client_port
+        self.SERVER_PORT = server_port
+        self.PROXY_PORT = proxy_port
+        
+    def sniff_packets(self):
+        sniff(filter="tcp", prn=self.process_packet)
 
-    def run(self):
-        with open("{}".format(self.file_name), "w") as f:
-            print("file: {} opened and ready to writ to".format(self.file_name))
+    def process_packet(self, packet):
+        if TCP in packet and (packet[TCP].sport in [ self.SERVER_PORT, self.PROXY_PORT] or packet[TCP].dport in [ self.SERVER_PORT, self.PROXY_PORT]):
+            # Extract relevant information from the packet
+            source_ip = packet[IP].src
+            dest_ip = packet[IP].dst
+            source_port = packet[TCP].sport
+            dest_port = packet[TCP].dport
+            timestamp = str(datetime.datetime.now())
+            total_length = packet[IP].len
+            cache_flag = packet[TCP].flags & TCP_FLAG_PUSH != 0
+            steps_flag = packet[TCP].flags & TCP_FLAG_ACK != 0
+            type_flag = packet[TCP].flags & TCP_FLAG_URG != 0
+            status_code = packet[TCP].flags & TCP_FLAG_RST != 0
+            cache_control = packet[TCP].flags & TCP_FLAG_SYN != 0
+            data = packet[TCP].payload
 
-            self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
-            while True:
-                packet, addr = self.socket.recvfrom(MAX_SIZE)
-                header = struct.unpack("!6s6sH", packet[:14])
+            # Prepare the packet information in the desired format
+            packet_info = {
+                "source_ip": source_ip,
+                "dest_ip": dest_ip,
+                "source_port": source_port,
+                "dest_port": dest_port,
+                "timestamp": timestamp,
+                "total_length": total_length,
+                "cache_flag": cache_flag,
+                "steps_flag": steps_flag,
+                "type_flag": type_flag,
+                "status_code": status_code,
+                "cache_control": cache_control,
+                "data": data.hex()  # Convert data to hexadecimal
+            }
 
-                if header[2] == 0x0800:
-                    ip_header = struct.unpack("!BBHHHBBH4s4s", packet[14:34])
-                    Packet_protocol = ip_header[6]
-                match(Packet_protocol):
-                    case 6: #TCP
-                        tcp_header = struct.unpack("!HHLLBBHHH", packet[34:54])
-                        # Extract relevant information from the headers
-                        source_ip = socket.inet_ntoa(ip_header[8])
-                        dest_ip = socket.inet_ntoa(ip_header[9])
-                        source_port = tcp_header[0]
-                        dest_port = tcp_header[1]
-                        timestamp = str(datetime.datetime.now())
-                        total_length = ip_header[2]
-                        cache_flag = tcp_header[4] & 0x20 != 0
-                        steps_flag = tcp_header[4] & 0x40 != 0
-                        type_flag = tcp_header[4] & 0x80 != 0
-                        status_code = tcp_header[5]
-                        cache_control = tcp_header[6]
-                        data = packet[54:]  # Payload data
+            # Write the packet information to the output file
+            with open(self.file_name, "a") as f:
+                f.write(str(packet_info) + "\n")
 
-                    # Prepare the packet information in the desired format
-                        packet_info = {
-                            "source_ip": source_ip,
-                            "dest_ip": dest_ip,
-                            "source_port": source_port,
-                            "dest_port": dest_port,
-                            "timestamp": timestamp,
-                            "total_length": total_length,
-                            "cache_flag": cache_flag,
-                            "steps_flag": steps_flag,
-                            "type_flag": type_flag,
-                            "status_code": status_code,
-                            "cache_control": cache_control,
-                            "data": data.hex()  # Convert data to hexadecimal
-                        }
+if __name__ == "__main__":
+    print("Started")
+    DEFAULT_SERVER_PORT = 9999 # The default port for the server
+    DEFAULT_PROXY_PORT = 9998 # The default port for the proxy
 
-                        # Write the packet information to the output file
-                        f.write(str(packet_info) + "\n")
-                        return
-                    case 17: #UDP
-                        return
-                    case 1: #ICMP
-                        return
-                    case 2: #IGMP
-                        return
-                    case _: #DEFAULT
-                        return
-            
+    #cp = DEFAULT_SERVER_PORT
+
+    sp = DEFAULT_SERVER_PORT
+    pp = DEFAULT_PROXY_PORT
+    sniffer = PacketSniffer(sp,pp)
+    sniffer.sniff_packets()
+    print("here")
+    
+

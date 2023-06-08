@@ -1,5 +1,6 @@
 import socket
 import struct
+from scapy.all import IP,  UDP, ICMP, send
 
 class Spoofer:
     def __init__(self, protocol, fake_senders_ip, fake_senders_port, dest_ip, dest_port):
@@ -10,31 +11,40 @@ class Spoofer:
         self.dest_port = dest_port
 
     def run(self):
-        try:
-            fake_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
-        except socket.error as e:
-            print(e)
-            exit(1)
+        if self.protocol == 'ICMP':
+            self.icmp_spoofer(self.fake_ip,self.dest_ip)
+        elif self.protocol == 'UDP':
+            self.udp_spoofer(self.fake_ip, self.fake_port, self.dest_ip, self.dest_port)
+        
+    def icmp_spoofer(self,source_ip, dest_ip):
+        packet = IP(src=source_ip, dst=dest_ip) / ICMP()
+        send(packet)
 
-        ip_header = struct.pack("!4s4sBBH", socket.inet_aton(self.fake_ip), socket.inet_aton(self.dest_ip), 0, 0, 0)
-
-        if self.protocol == "ICMP":
-            icmp_header = struct.pack("bbHHh", 8, 0, 0, 0, 0)
-            packet = ip_header + icmp_header
-
-        elif self.protocol == "UDP":
-            udp_header = struct.pack("!HHHH", self.fake_port, self.dest_port, 8, 0)
-            packet = ip_header + udp_header
-
-        try:
-            fake_socket.sendto(packet, (self.dest_ip, 0))
-            print("Sent fake spoof")
-        except socket.error as e:
-            print(e)
-        finally:
-            fake_socket.close()
+    def udp_spoofer(self,source_ip, source_port, dest_ip, dest_port):
+        packet = IP(src=source_ip, dst=dest_ip) / UDP(sport=source_port, dport=dest_port)
+        send(packet)
 
 if "__main__" == __name__:
-    
-#spoof = Spoofer("TCP", "192.168.0.100", 12345, "192.168.0.1", 80)
-#spoof.run()
+    print("started")
+    spoof = Spoofer("ICMP", "192.168.0.100", 12345, "192.168.0.1", 80)
+    spoof.run()
+
+''''from scapy.all import IP, ICMP, UDP, send
+
+def icmp_spoofer(source_ip, dest_ip):
+    packet = IP(src=source_ip, dst=dest_ip) / ICMP()
+    send(packet)
+
+def udp_spoofer(source_ip, source_port, dest_ip, dest_port):
+    packet = IP(src=source_ip, dst=dest_ip) / UDP(sport=source_port, dport=dest_port)
+    send(packet)
+
+# Example usage
+source_ip = "192.168.0.100"  # Spoofed source IP address
+dest_ip = "192.168.0.1"  # Destination IP address
+source_port = 12345  # Spoofed source port
+dest_port = 80  # Destination port
+
+icmp_spoofer(source_ip, dest_ip)  # Spoof an ICMP packet
+udp_spoofer(source_ip, source_port, dest_ip, dest_port)  # Spoof a UDP packet
+'''
