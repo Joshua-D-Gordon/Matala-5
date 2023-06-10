@@ -19,13 +19,17 @@ class PacketSniffer:
         self.proxy_port = numP
     def setFN(self, str):
         self.file_name = str
-        
+
     def sniff_packets(self):
         sniff(filter=self.protocol, prn=self.process_packet, store=False)
 
     def process_packet(self, packet):
         parsed_data = {}
-
+        if self.protocol == "telnet":
+            if TCP in packet:
+                if packet[TCP].dport == 23 or packet[TCP].sport == 23:
+                    print("got telnet data")
+                    parsed_data = self.parse_tcp_packet(packet)
         if self.protocol == "tcp":
             if TCP in packet :#and ((packet[TCP].sport in [self.server_port, self.proxy_port] or packet[TCP].dport in [self.server_port, self.proxy_port])):
                 parsed_data = self.parse_tcp_packet(packet)
