@@ -26,25 +26,5 @@ class Spoofer:
 
 if "__main__" == __name__:
     print("started")
-    spoof = Spoofer("ICMP", "192.168.0.100", 12345, "192.168.0.1", 80)
+    spoof = Spoofer("ICMP", "187.143.0.1", 12345, "8.8.8.8", 80)
     spoof.run()
-
-''''from scapy.all import IP, ICMP, UDP, send
-
-def icmp_spoofer(source_ip, dest_ip):
-    packet = IP(src=source_ip, dst=dest_ip) / ICMP()
-    send(packet)
-
-def udp_spoofer(source_ip, source_port, dest_ip, dest_port):
-    packet = IP(src=source_ip, dst=dest_ip) / UDP(sport=source_port, dport=dest_port)
-    send(packet)
-
-# Example usage
-source_ip = "192.168.0.100"  # Spoofed source IP address
-dest_ip = "192.168.0.1"  # Destination IP address
-source_port = 12345  # Spoofed source port
-dest_port = 80  # Destination port
-
-icmp_spoofer(source_ip, dest_ip)  # Spoof an ICMP packet
-udp_spoofer(source_ip, source_port, dest_ip, dest_port)  # Spoof a UDP packet
-'''

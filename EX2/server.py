@@ -112,7 +112,7 @@ def server(host: str, port: int) -> None:
                 # accept() - returns two values: the client_socket object and a tuple(ip, portNumber)
                 # this is infact the end process of our "hand shake"
                 client_socket, address = server_socket.accept()# * Fill in start (2) # * Fill in end (2)
-
+                
                 # Create a new thread to handle the client request
                 thread = threading.Thread(target=client_handler, args=(
                     client_socket, address))

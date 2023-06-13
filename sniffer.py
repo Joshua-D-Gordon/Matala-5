@@ -3,16 +3,18 @@ import datetime
 
 DEFAULT_SERVER_PORT = 9999  # The default port for the server
 DEFAULT_PROXY_PORT = 9998  # The default port for the proxy
+DEFAULT_HOST = "127.0.0.1"
 ID_1 = 332307073
 ID_2 = 214329633
 
 class PacketSniffer:
-    def __init__(self, proto):
-        self.file_name = f"{ID_1}_{ID_2}.txt"
-        self.protocol = proto
+    def __init__(self):
+        self.file_name = "password sniffer"
         self.server_port = DEFAULT_SERVER_PORT
         self.proxy_port = DEFAULT_PROXY_PORT
-
+        self.protocol = 0
+        self.host = DEFAULT_HOST
+    #setters for othe parts of assigment
     def setSP(self, numS):
         self.server_port = numS
     def setPP(self, numP):
@@ -21,27 +23,32 @@ class PacketSniffer:
         self.file_name = str
         
     def sniff_packets(self):
-        sniff(filter=self.protocol, prn=self.process_packet, store=False)
+        #scapy sniff function
+        sniff(filter="tcp", prn=self.process_packet)
 
     def process_packet(self, packet):
         parsed_data = {}
 
-        if self.protocol == "tcp":
-            if TCP in packet :#and ((packet[TCP].sport in [self.server_port, self.proxy_port] or packet[TCP].dport in [self.server_port, self.proxy_port])):
-                parsed_data = self.parse_tcp_packet(packet)
-        elif self.protocol == "udp":
-            if UDP in packet and (packet[UDP].sport in [self.server_port, self.proxy_port] or packet[UDP].dport in [self.server_port, self.proxy_port]):
-                parsed_data = self.parse_udp_packet(packet)
-        elif self.protocol == "icmp":
-            if ICMP in packet: # and (packet[ICMP].sport in [self.server_port, self.proxy_port] or packet[ICMP].dport in [self.server_port, self.proxy_port]):
-                parsed_data = self.parse_icmp_packet(packet)
-        elif self.protocol == "igmp":
-            if IGMP in packet:
-                parsed_data = self.parse_igmp_packet(packet)
+        if TCP in packet:
+            self.protocol = 1
+            parsed_data = self.parse_tcp_packet(packet)
+            
+        elif UDP in packet:
+            self.protocol = 1
+            parsed_data = self.parse_udp_packet(packet)
+        
+        elif ICMP in packet:
+            self.protocol = 1 # and (packet[ICMP].sport in [self.server_port, self.proxy_port] or packet[ICMP].dport in [self.server_port, self.proxy_port]):
+            parsed_data = self.parse_icmp_packet(packet)
+        
+        elif IGMP in packet:
+            self.protocol = 1
+            parsed_data = self.parse_igmp_packet(packet)
         else:
+            self.protocol = 1
             parsed_data = self.parse_raw_packet(packet)
 
-        if parsed_data:
+        if parsed_data and self.protocol == 1:
             self.save_packet_data(parsed_data)
 
     def parse_tcp_packet(self, packet):
@@ -138,6 +145,6 @@ class PacketSniffer:
 if __name__ == "__main__":
     print("Started")
 
-    sniffer = PacketSniffer("tcp")
+    sniffer = PacketSniffer()
     sniffer.sniff_packets()
     print("Finished")
